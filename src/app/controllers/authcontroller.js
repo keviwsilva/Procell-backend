@@ -42,8 +42,9 @@ router.post('/login', loginLimiter, async (req, res) => {
                     // Se a conta existe
                     if (results.length > 0) {
                         const userId = results[0].user_id;
+                        const userType = results[0].user_type;
                         const userLastLoginIp = results[0].user_last_login_ip;
-    
+                        console.log(userType);
                         
                         const hashedPassword = results[0].user_password;
 
@@ -72,7 +73,7 @@ router.post('/login', loginLimiter, async (req, res) => {
                             });
 
 
-                            const token = jwt.sign({ email: email, userId: userId }, jwtSecret, { expiresIn: '1h' }); // Adjust expiration as needed
+                            const token = jwt.sign({ email: email, userId: userId, usertype: userType }, jwtSecret, { expiresIn: '1h' }); // Adjust expiration as needed
 
                             res.status(200).json({ token });
                         } else {

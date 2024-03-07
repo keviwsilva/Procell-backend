@@ -1,26 +1,37 @@
 const express = require("express");
 const mysqConnection = require("../../database");
-// const bcrypt = require("bcrypt");
-// const jwt = require('jsonwebtoken');
 
 const { verifyToken } = require("../middleware/jwtmiddleware")
-const { insertPedido } = require("../models/pedidoModel")
+const { insertPedido, insertCarrinho } = require("../models/pedidoModel")
 
 const router = express.Router();
 
 
-router.post('/pedidos', verifyToken, async (req, res) => {
+router.post('/carrinho', verifyToken, async (req, res) => {
   try {
       const user_id = req.userId;
-      const { data, valor_total, produtos } = req.body;
+      const { produtos } = req.body;
 
-      insertPedido(valor_total,data, user_id, produtos,res);
+      await insertCarrinho(user_id, produtos, res);
   } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Erro interno do servidor." });
   }
 });
 
+// Rota para criar um pedido
+router.post('/pedidos', verifyToken, async (req, res) => {
+  try {
+      const user_id= req.userId;
+      const user_type = req.userType;
+      const { data } = req.body;
+
+      await insertPedido( data, user_id, user_type,  res);
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Erro interno do servidor." });
+  }
+});
 
 router.get('/list', verifyToken, async (req, res) => {
   try {

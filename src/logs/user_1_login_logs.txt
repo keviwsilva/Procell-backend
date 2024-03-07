@@ -21,3 +21,8 @@
 2024-03-04T11:25:04.050-03:00 - User 1 logged in from IP ::ffff:127.0.0.1
 2024-03-04T11:30:16.373-03:00 - User 1 logged in from IP ::ffff:127.0.0.1
 2024-03-04T11:36:44.694-03:00 - User 1 logged in from IP ::ffff:127.0.0.1
+2024-03-07T10:14:49.372-03:00 - User 1 logged in from IP ::ffff:127.0.0.1
+2024-03-07T10:37:41.687-03:00 - User 1 logged in from IP ::ffff:127.0.0.1
+2024-03-07T10:39:14.627-03:00 - User 1 logged in from IP ::ffff:127.0.0.1
+2024-03-07T10:48:14.441-03:00 - User 1 logged in from IP ::ffff:127.0.0.1
+2024-03-07T11:40:10.650-03:00 - User 1 logged in from IP ::ffff:127.0.0.1
