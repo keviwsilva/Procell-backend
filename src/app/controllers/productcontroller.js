@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 
 const { verifyToken } = require("../middleware/jwtmiddleware")
 const { insertproduto,checkNumserieExists, updatePatrimony, deletePatrimony } = require("../models/productModel");
+const { compareSync } = require("bcrypt");
 
 const router = express.Router();
 
@@ -26,7 +27,7 @@ router.get('/list', async (req, res) => {
         const  user_id  = req.userId;
 
         // Consultar o banco de dados para obter os patrimônios do usuário
-        const getproductsQuery = "SELECT p.prod_name, p.prod_valor, p.prod_quantidade, p.prod_descricao, c.cat_name, c.cat_descricao FROM tbl_produto p JOIN tbl_categoria c ON p.cat_id = c.cat_id";
+        const getproductsQuery = "SELECT p.prod_name, p.prod_valorCPF, p.prod_quantidade, p.prod_descricao, c.cat_name, c.cat_descricao FROM tbl_produto p JOIN tbl_categoria c ON p.cat_id = c.cat_id";
 
         mysqConnection.query(getproductsQuery, [user_id], (err, results) => {
             if (err) {
@@ -45,6 +46,40 @@ router.get('/list', async (req, res) => {
         res.status(500).json({ message: "Erro interno do servidor." });
     }
 });
+
+router.get('/list', verifyToken, async (req, res) => {
+    try {
+        
+        const user_type = req.usertype;
+
+
+        // Construa a consulta SQL com base no tipo de usuário
+        let getproductsQuery = "";
+        if (user_type === 'CPF' || user_type === '') {
+            getproductsQuery = "SELECT p.prod_name, p.prod_valorCPF AS valor, p.prod_quantidade, p.prod_descricao, c.cat_name, c.cat_descricao FROM tbl_produto p JOIN tbl_categoria c ON p.cat_id = c.cat_id";
+        } else if (user_type === 'pessoa_juridica') {
+            getproductsQuery = "SELECT p.prod_name, p.prod_valorCNPJ AS valor, p.prod_quantidade, p.prod_descricao, c.cat_name, c.cat_descricao FROM tbl_produto p JOIN tbl_categoria c ON p.cat_id = c.cat_id";
+        }
+
+        // Consultar o banco de dados para obter os produtos do usuário
+        mysqConnection.query(getproductsQuery, (err, products_results) => {
+            if (err) {
+                console.error(err);
+                return res.status(400).json({ message: "Erro ao buscar os produtos no banco de dados." });
+            }
+
+            if (products_results.length > 0) {
+                res.status(200).json({ produtos: products_results });
+            } else {
+                res.status(404).json({ message: "Nenhum produto encontrado para o usuário especificado." });
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erro interno do servidor." });
+    }
+});
+
 
 
 // Rota para atualizar um patrimônio
@@ -109,22 +144,6 @@ router.delete('/delete/:patrid', verifyToken, async (req, res) => {
         res.status(500).json({ message: "Erro interno do servidor." });
     }
 });
-
-// // Função para verificar o token
-// Função para verificar o token
-// function verifyToken(req, res, next) {
-//     const bearerHeader = req.headers['authorization'];
-
-//     if (typeof bearerHeader !== 'undefined') {
-//         const bearer = bearerHeader.split(' ');
-//         const bearerToken = bearer[1];
-//         req.token = bearerToken;
-//         next();
-//     } else {
-//         res.status(401).json({ message: 'Unauthorized: Token not provided' });
-//     }
-// }
-
 
 
 module.exports = router;

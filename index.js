@@ -2,8 +2,13 @@ const express = require("express");
 const session = require("express-session");
 const bodyParser = require("body-parser");
 const app = express();
+const mercadoPago = require('mercadopago');
+
+const cors = require('cors');
+
 
 // Middleware
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({ secret: "your-secret-key", resave: true, saveUninitialized: true }));
@@ -14,12 +19,15 @@ const registerRoutes = require("./src/app/controllers/registercontroller");
 const produtoRoutes = require("./src/app/controllers/productcontroller");
 const categoryRoutes = require("./src/app/controllers/categoryController");
 const pedidoRoutes = require("./src/app/controllers/pedidocontroller");
+const paymentRoutes = require("./src/app/controllers/paymentcontroller");
 
 app.use('/auth', authRoutes);
 app.use('/register', registerRoutes);
 app.use('/product', produtoRoutes);
 app.use('/category', categoryRoutes);
 app.use('/pedido', pedidoRoutes);
+app.use('/payment', paymentRoutes);
+
 // Your other routes...
 
 // Start the server
