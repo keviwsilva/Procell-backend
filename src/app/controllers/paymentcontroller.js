@@ -2,10 +2,11 @@ const express = require("express");
 const router = express.Router();
 const { MercadoPagoConfig, Payment, Preference } = require("mercadopago");
 const { verifyToken } = require("../middleware/jwtmiddleware");
+const crypto = require('crypto');
 
 const client = new MercadoPagoConfig({
   accessToken:
-    "TEST-7757769270547728-031309-03a74c4816326ec165f244f74b43bc9e-259503750",
+    "TEST-1268092805959625-031108-afa196341c37eab32304a65a6cd9605c-259503750",
   
 }); 
 
@@ -23,8 +24,15 @@ async function createPayment(id, title, amount, quantity) {
             unit_price: amount
           }
         ],
-    }})
-    console.log(paymentRequest)
+        notification_url:`https://c9b4-2804-14d-4283-41af-7970-75d1-732b-6d21.ngrok-free.app/payment/notificacao/`,
+        back_urls: {
+          success: "https://c9b4-2804-14d-4283-41af-7970-75d1-732b-6d21.ngrok-free.app/success",
+          failure: "https://c9b4-2804-14d-4283-41af-7970-75d1-732b-6d21.ngrok-free.app",
+          pending: "https://c9b4-2804-14d-4283-41af-7970-75d1-732b-6d21.ngrok-free.app"
+      },
+      auto_return: "approved",
+      }})
+    console.log(paymentRequest.notification_url)
     return paymentRequest.sandbox_init_point
   }catch(error){
     console.log('error', error);
@@ -47,22 +55,16 @@ router.post("/pagamento", verifyToken, async (req, res) => {
   }
 });
 
+router.get('/success', (req, res) => {
+  res.send('salve')
+})
 
-
-router.post('/notificacao', async (req, res) => {
+router.post("/notificacao", async (req, res) => {
   const notification = req.body;
-
   console.log(notification)
-  // Verifique a autenticidade da notificação
-  const isValid = await preference.verifyNotification(notification);
-  if (isValid) {
-    // Processe a notificação de acordo com o seu fluxo de negócios
-    // (ex: atualizar o status do pedido, liberar o acesso a um serviço)
 
-    res.status(200).send('OK');
-  } else {
-    res.status(400).send('Notificação inválida.');
-  }
-});
+})
+
+
 
 module.exports = router;
