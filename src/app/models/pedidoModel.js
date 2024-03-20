@@ -1,53 +1,164 @@
 const mysqConnection = require("../../database/index");
 
+
+
 const insertCarrinho = (usuarioId, produtos, res) => {
-    const values = produtos.map(produto => [usuarioId, produto.id_produto, produto.quantidade]);
-    const insertCarrinhoQuery = "INSERT INTO tbl_carrinho (user_id, prod_id, quantidade) VALUES ?";
-    
-    mysqConnection.query(insertCarrinhoQuery, [values], (err, result) => {
-        if (err) {
-            console.error(err);
-            return res.status(400).json({ message: "Erro ao inserir os produtos no carrinho de compras." });
-        }
-        
-        res.status(201).json({ message: "Produtos adicionados ao carrinho com sucesso." });
+    produtos.forEach(produto => {
+        const { id_produto, quantidade } = produto;
+
+        // Verificar se o produto já existe no carrinho
+        const checkIfExistsQuery = "SELECT * FROM tbl_carrinho WHERE user_id = ? AND prod_id = ?";
+        mysqConnection.query(checkIfExistsQuery, [usuarioId, id_produto], (err, rows) => {
+            if (err) {
+                console.error(err);
+                return res.status(400).json({ message: "Erro ao verificar o produto no carrinho." });
+            }
+
+            if (rows.length > 0) {
+                // Se o produto já existe, atualize a quantidade
+                const updateQuantityQuery = "UPDATE tbl_carrinho SET quantidade = quantidade + ? WHERE user_id = ? AND prod_id = ?";
+                mysqConnection.query(updateQuantityQuery, [quantidade, usuarioId, id_produto], (err, result) => {
+                    if (err) {
+                        console.error(err);
+                        return res.status(400).json({ message: "Erro ao atualizar a quantidade do produto no carrinho." });
+                    }
+                });
+            } else {
+                // Se o produto não existe, insira-o no carrinho
+                const insertCarrinhoQuery = "INSERT INTO tbl_carrinho (user_id, prod_id, quantidade) VALUES (?, ?, ?)";
+                mysqConnection.query(insertCarrinhoQuery, [usuarioId, id_produto, quantidade], (err, result) => {
+                    if (err) {
+                        console.error(err);
+                        return res.status(400).json({ message: "Erro ao inserir o produto no carrinho." });
+                    }
+                });
+            }
+        });
     });
+
+    res.status(201).json({ message: "Produtos adicionados ao carrinho com sucesso." });
 }
 
 
-function calcularValorTotalPedido(user_type, userId) {
-    return new Promise((resolve, reject) => {
-        let calcularValorTotalQuery;
 
+
+function getCartData(userId, user_type) {
+    return new Promise((resolve, reject) => {
+        let cartDataQuery;
+        
+        // Verifique o tipo de usuário para determinar a consulta SQL apropriada
         if (user_type === 'CPF') {
-            calcularValorTotalQuery = `
-                SELECT SUM(p.prod_valorCPF * c.quantidade) AS valor_total
-                FROM tbl_produto p
-                JOIN tbl_carrinho c ON p.prod_id = c.prod_id
-                WHERE c.user_id = ?;
+            cartDataQuery = `
+                SELECT 
+                    cp.prod_id,
+                    p.prod_name,
+                    p.prod_valorCPF AS prod_valor,
+                    p.prod_descricao,
+                    cp.quantidade
+                FROM 
+                    tbl_carrinho cp
+                INNER JOIN 
+                    tbl_produto p ON cp.prod_id = p.prod_id
+                WHERE 
+                    cp.user_id = ?;
             `;
         } else if (user_type === 'CNPJ') {
-            calcularValorTotalQuery = `
-                SELECT SUM(p.prod_valorCNPJ * c.quantidade) AS valor_total
-                FROM tbl_produto p
-                JOIN tbl_carrinho c ON p.prod_id = c.prod_id
-                WHERE c.user_id = ?;
+            cartDataQuery = `
+                SELECT 
+                    cp.prod_id,
+                    p.prod_name,
+                    p.prod_valorCNPJ AS prod_valor,
+                    p.prod_descricao,
+                    cp.quantidade
+                FROM 
+                    tbl_carrinho cp
+                INNER JOIN 
+                    tbl_produto p ON cp.prod_id = p.prod_id
+                WHERE 
+                    cp.user_id = ?;
             `;
         } else {
             reject("Tipo de usuário inválido.");
             return;
         }
 
-        mysqConnection.query(calcularValorTotalQuery, [userId], (err, result) => {
+        // Execute a consulta SQL
+        mysqConnection.query(cartDataQuery, [userId], (err, rows) => {
             if (err) {
-                console.error(err);
-                reject("Erro ao calcular o valor total do pedido.");
-                return;
+                console.error("Erro ao obter os dados do carrinho:", err);
+                reject(err);
+            } else {
+                resolve(rows);
             }
-            resolve(result);
         });
     });
 }
+
+
+function formatCartDataForPayment(cartData) {
+    let totalAmount = 0;
+    const formattedCart = [];
+
+    // Loop através dos dados do carrinho
+    cartData.forEach(item => {
+        const { prod_id, prod_name, prod_valor, quantidade } = item;
+
+        // Calcular o preço total para este item (preço * quantidade)
+        const itemTotal = prod_valor * quantidade;
+
+        // Adicionar o preço total ao preço total geral
+        totalAmount += itemTotal;
+
+        // Adicionar o item formatado à lista de itens formatados
+        formattedCart.push({
+            id: prod_id,
+            title: prod_name,
+            quantity: quantidade,
+            amount: prod_valor // Supondo que 'amount' seja o preço unitário do produto
+        });
+    });
+
+    // Retorna um objeto com os dados formatados e o preço total
+    return {
+        items: formattedCart,
+        totalAmount: totalAmount
+    };
+}
+
+
+// function calcularValorTotalPedido(user_type, userId) {
+//     return new Promise((resolve, reject) => {
+//         let calcularValorTotalQuery;
+
+//         if (user_type === 'CPF') {
+//             calcularValorTotalQuery = `
+//                 SELECT SUM(p.prod_valorCPF * c.quantidade) AS valor_total
+//                 FROM tbl_produto p
+//                 JOIN tbl_carrinho c ON p.prod_id = c.prod_id
+//                 WHERE c.user_id = ?;
+//             `;
+//         } else if (user_type === 'CNPJ') {
+//             calcularValorTotalQuery = `
+//                 SELECT SUM(p.prod_valorCNPJ * c.quantidade) AS valor_total
+//                 FROM tbl_produto p
+//                 JOIN tbl_carrinho c ON p.prod_id = c.prod_id
+//                 WHERE c.user_id = ?;
+//             `;
+//         } else {
+//             reject("Tipo de usuário inválido.");
+//             return;
+//         }
+
+//         mysqConnection.query(calcularValorTotalQuery, [userId], (err, result) => {
+//             if (err) {
+//                 console.error(err);
+//                 reject("Erro ao calcular o valor total do pedido.");
+//                 return;
+//             }
+//             resolve(result);
+//         });
+//     });
+// }
 
 function inserirPedido(valorTotal, data, userId) {
     return new Promise((resolve, reject) => {
@@ -80,8 +191,6 @@ function transferirItensDoCarrinhoParaPedido(pedidoId, userId) {
     });
 }
 
-
-
 function deletarLinhasPorUserId(userId) {
     return new Promise((resolve, reject) => {
         const deleteQuery = "DELETE FROM tbl_carrinho WHERE user_id = ?";
@@ -91,48 +200,39 @@ function deletarLinhasPorUserId(userId) {
                 reject("Erro ao deletar linhas do usuário.");
                 return;
             }
+            console.log('linhas deletadas')
             resolve("Linhas deletadas com sucesso.");
         });
     });
 }
 
 
-const insertPedido = (data, userId, user_type, res) => {
-  return new Promise((resolve, reject) => {
-    calcularValorTotalPedido(user_type, userId)
-      .then((result) => {
-        const valorTotal = result[0].valor_total;
-        inserirPedido(valorTotal, data, userId).then((pedidoId) => {
-          transferirItensDoCarrinhoParaPedido(pedidoId, userId)
-            .then((message) => {
-              console.log(message);
-              deletarLinhasPorUserId(userId)
-                .then((message) => {
-                  console.log(message);
-                  res
-                    .status(201)
-                    .json({ message: "Pedido realizado com sucesso" });
-                })
-                .catch((error) => {
-                  console.error("Erro ao deletar linhas:", error);
-                });
-            })
-            .catch((error) => {
-              console.error(
-                "Erro ao transferir itens do carrinho para o pedido:",
-                error
-              );
-            });
-        });
-      })
-      .catch((error) => {
-        console.error("Erro ao inserir o pedido:", error);
-      });
-  }).catch((error) => {
-    console.error("Erro:", error);
-  });
-};
+// const insertPedido = (valorTotal, data, userId, user_type, res) => {
+//     return new Promise((resolve, reject) => {
+//         inserirPedido(valorTotal, data, userId, res).then((pedidoId) => {
+//             transferirItensDoCarrinhoParaPedido(pedidoId, userId, res)
+//                 .then((message) => {
+//                     console.log(message);
+//                     return message
+//                 })
+//                 .catch((error) => {
+//                     console.error("Erro ao transferir itens do carrinho para o pedido:", error);
+//                     res.json({ message: "Erro interno do servidor ao transferir itens do carrinho para o pedido." });
+//                 });
+//         })
+//         .catch((error) => {
+//             console.error("Erro ao inserir o pedido:", error);
+//             res.status(500).json({ message: "Erro interno do servidor ao inserir o pedido." });
+//         });
+//     });
+// };
+
+async function insertPedido(valorTotal, data, userId) {
+    const pedidoId = await inserirPedido(valorTotal, data, userId);
+    await transferirItensDoCarrinhoParaPedido(pedidoId, userId);
+    return pedidoId;
+  }
+  
 
 
-
-module.exports = { insertPedido, insertCarrinho };
+module.exports = { insertPedido, insertCarrinho, getCartData, formatCartDataForPayment, deletarLinhasPorUserId };

@@ -1,8 +1,9 @@
 const express = require("express");
 const mysqConnection = require("../../database");
+const axios = require('axios');
 
 const { verifyToken } = require("../middleware/jwtmiddleware")
-const { insertPedido, insertCarrinho } = require("../models/pedidoModel")
+const { insertPedido, insertCarrinho, getCartData, formatCartDataForPayment, deletarLinhasPorUserId } = require("../models/pedidoModel")
 
 const router = express.Router();
 
@@ -13,20 +14,68 @@ router.post('/carrinho', verifyToken, async (req, res) => {
       const { produtos } = req.body;
 
       await insertCarrinho(user_id, produtos, res);
+
+      // res.status(200).json({ message: "Itens adicionados ao carrinho." });
+  
   } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Erro interno do servidor." });
   }
 });
 
+router.get('/carrinholist', verifyToken, async (req, res) => {
+  try {
+      const user_id = req.userId;
+      const user_type = req.userType
+      const cartData = await getCartData(user_id, user_type); 
+      console.log(cartData)
+      res.status(200).json(cartData)
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Erro interno do servidor." });
+  }
+});
+
+
+
 // Rota para criar um pedido
 router.post('/pedidos', verifyToken, async (req, res) => {
   try {
       const user_id= req.userId;
       const user_type = req.userType;
-      const { data } = req.body;
+      const token = req.headers.authorization; // Obtenha o token de autenticação da solicitação original
 
-      await insertPedido( data, user_id, user_type,  res);
+      
+      const cartData = await getCartData(user_id, user_type); // Replace with logic to retrieve processed cart
+      
+      if (!cartData || cartData.length === 0) {
+        return res.status(400).json({ message: "O carrinho está vazio. Não é possível fazer o pedido." });
+      }
+      
+      console.log(cartData)
+      const { items, totalAmount } = formatCartDataForPayment(cartData);
+      
+      // Construa o objeto paymentBody usando os dados formatados
+      const paymentBody = {
+        items: items,
+      };
+      
+      const dataAtual = new Date().toISOString().split('T')[0]; 
+
+      await insertPedido( totalAmount, dataAtual, user_id,  res);
+
+      await deletarLinhasPorUserId(user_id, res);
+
+      
+      console.log(paymentBody)
+      const response = await axios.post('http://localhost:3001/payment/pagamento', paymentBody, {
+        headers: {
+          Authorization: token // Inclua o token no cabeçalho da solicitação
+        }
+      });
+
+      res.status(200).json({ paymentLink: response.data })
+
   } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Erro interno do servidor." });
