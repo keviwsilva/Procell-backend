@@ -3,7 +3,7 @@ const mysqConnection = require("../../database");
 const axios = require('axios');
 
 const { verifyToken } = require("../middleware/jwtmiddleware")
-const { insertPedido, insertCarrinho, getCartData, formatCartDataForPayment, deletarLinhasPorUserId } = require("../models/pedidoModel")
+const { insertPedido, insertCarrinho, getCartData, formatCartDataForPayment, deletarLinhasPorUserId, insertLink } = require("../models/pedidoModel")
 
 const router = express.Router();
 
@@ -62,7 +62,9 @@ router.post('/pedidos', verifyToken, async (req, res) => {
       
       const dataAtual = new Date().toISOString().split('T')[0]; 
 
-      await insertPedido( totalAmount, dataAtual, user_id,  res);
+      const pedidoId = await insertPedido( totalAmount, dataAtual, user_id,  res);
+
+      console.log(pedidoId)
 
       await deletarLinhasPorUserId(user_id, res);
 
@@ -74,7 +76,11 @@ router.post('/pedidos', verifyToken, async (req, res) => {
         }
       });
 
-      res.status(200).json({ paymentLink: response.data })
+      console.log(pedidoId, user_id, response.data.paymentlink)
+
+      await insertLink(pedidoId, user_id, response.data.paymentlink)
+
+      res.status(200).json('pedido feito com sucesso')
 
   } catch (error) {
       console.error(error);
@@ -159,7 +165,9 @@ router.get('/list/:pedido_id', verifyToken, async (req, res) => {
     // Consulta o banco de dados para obter os detalhes do pedido
     const getPedidoQuery = `
       SELECT 
-        p.ped_id, 
+        p.ped_id,
+        p.ped_pago,
+        p.link_pagamento,
         GROUP_CONCAT(CONCAT(
           pp.prod_id, 
           ':', 
@@ -187,6 +195,8 @@ router.get('/list/:pedido_id', verifyToken, async (req, res) => {
       if (results.length > 0) {
         const pedido = results.map(row => ({
           pedido_id: row.ped_id,
+          ped_pago: row.ped_pago,
+          link_pagamento: row.link_pagamento,
           produtos: row.produtos.split(',').map(p => {
             const [produto_id, quantidade, nome, valor, descricao] = p.split(':');
             return { produto_id: produto_id, quantidade: quantidade, nome: nome, valor: valor, descricao: descricao };

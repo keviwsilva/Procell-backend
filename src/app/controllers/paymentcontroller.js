@@ -84,9 +84,34 @@ router.post("/notificacao", async (req, res) => {
 
     // Handle successful API response (payment details)
     const paymentData = response.data;
-    console.log(paymentData)
+    console.log(paymentData.results.status)
 
-    // console.log("Payment details:", paymentData); // Log the retrieved payment data
+    const paid = paymentData.results.status;
+
+    const getPedidosQuery = `UPDATE tbl_pedido SET ped_pago= ? WHERE ped_id = ? AND user_id = ?';`;
+
+  mysqConnection.query(getPedidosQuery, [paid], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(400).json({ message: "Erro ao buscar os pedidos no banco de dados." });
+    }
+
+    if (results.length > 0) {
+      const pedidos = results.map(row => ({
+        pedido_id: row.ped_id,
+        produtos: row.produtos.split(',').map(p => {
+          const [produto_id, quantidade, nome, valor, descricao] = p.split(':');
+          return { produto_id: produto_id, quantidade: quantidade, nome: nome, valor: valor, descricao: descricao };
+        })
+      }));
+
+      res.status(200).json({ pedidos });
+    } else {
+      res.status(404).json({ message: "Nenhum pedido encontrado para o usuário especificado." });
+    }
+  });
+
+
 
     // ... (rest of your code to process payment details)
 

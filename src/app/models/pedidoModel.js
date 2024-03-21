@@ -162,8 +162,8 @@ function formatCartDataForPayment(cartData) {
 
 function inserirPedido(valorTotal, data, userId) {
     return new Promise((resolve, reject) => {
-        const insertPedidoQuery = "INSERT INTO tbl_pedido (ped_valor, ped_data, user_id) VALUES (?, ?, ?)";
-        mysqConnection.query(insertPedidoQuery, [valorTotal, data, userId], (err, result) => {
+        const insertPedidoQuery = "INSERT INTO tbl_pedido (ped_valor, ped_data, user_id, ped_pago) VALUES (?, ?, ?, ?)";
+        mysqConnection.query(insertPedidoQuery, [valorTotal, data, userId, 'nao pago'], (err, result) => {
             if (err) {
                 console.error(err);
                 reject("Erro ao inserir o pedido no banco de dados.");
@@ -232,7 +232,22 @@ async function insertPedido(valorTotal, data, userId) {
     await transferirItensDoCarrinhoParaPedido(pedidoId, userId);
     return pedidoId;
   }
+
+async function insertLink(ped_id, user_id, paymentLink, res){
+    return new Promise((resolve, reject) => {
+
+        const updateLinkQuery = 'UPDATE tbl_pedido SET link_pagamento = ? WHERE ped_id = ? AND user_id = ?';
+        mysqConnection.query(updateLinkQuery, [paymentLink, ped_id, user_id], (err, result) => {
+            if (err) {
+                console.error(err);
+                reject("Erro ao atualizar o link de pagamento no banco de dados.");
+                return;
+            }
+            resolve(result);
+        });
+    });
+}
   
 
 
-module.exports = { insertPedido, insertCarrinho, getCartData, formatCartDataForPayment, deletarLinhasPorUserId };
+module.exports = { insertPedido, insertCarrinho, getCartData, formatCartDataForPayment, deletarLinhasPorUserId, insertLink };

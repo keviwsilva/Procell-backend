@@ -13,15 +13,13 @@ router.post('/register',verifyToken, async (req, res) => {
     try {
         const { name, descricao } = req.body;
         
-        // const  user_id  = req.userId;
-        // Verificar se o número de série já existe
-        // const numserieExists = await checkNumserieExists(numserie);
+        const userIsAdmin = await isAdmin(user_id);
 
-        // if (numserieExists) {
-        //     return res.status(400).json({ message: "Patrimônio já cadastrado!" });
-        // }
+        if(!userIsAdmin){
+            return res.status(403).json({message: "Você nao tem permissão para realizar esta ação"})
+        }
 
-        // Inserir o patrimônio no banco de dados
+
         insertcategory(name,descricao, res);
     } catch (error) {
         console.error(error);
@@ -32,11 +30,10 @@ router.post('/register',verifyToken, async (req, res) => {
 // Rota para obter patrimônios de um usuário específico
 router.get('/list', verifyToken, async (req, res) => {
     try {
-        const  user_id  = req.userId;
 
         // Consultar o banco de dados para obter os patrimônios do usuário
-        const getPatrimoniosQuery = "SELECT * FROM tbl_patrimonio WHERE user_id = ?";
-        mysqConnection.query(getPatrimoniosQuery, [user_id], (err, results) => {
+        const getPatrimoniosQuery = "SELECT * FROM tbl_categoria";
+        mysqConnection.query(getPatrimoniosQuery, (err, results) => {
             if (err) {
                 console.error(err);
                 return res.status(400).json({ message: "Erro ao buscar os patrimônios no banco de dados." });
@@ -58,44 +55,19 @@ router.get('/list', verifyToken, async (req, res) => {
 // Rota para atualizar um patrimônio
 router.put('/update/:patr_id', verifyToken, async (req, res) => {
     try {
-        const patr_id = req.params.patr_id;
+        const prod_id = req.params.prod_id;
         const user_id  = req.userId;
         
+
+        const userIsAdmin = await isAdmin(user_id);
+
+        if(!userIsAdmin){
+            return res.status(403).json({message: "Você nao tem permissão para realizar esta ação"})
+        }
+
         const {
-            valor,
-            tamanho,
-            quantidade,
-            dt_compra,
-            passativ,
-            garantia,
-            numserie,
-            notafiscal,
-            local,
-            imei,
-            ativoinativo,
-            descricao,
-            responsavel,
-            documentacao,
-            depreciacao
         } = req.body;
 
-        const updateValues = {
-            patr_valor: valor,
-            patr_tamanho: tamanho,
-            patr_quantidade: quantidade,
-            patr_dt_compra: dt_compra,
-            patr_passativ: passativ,
-            patr_garantia: garantia,
-            patr_numserie: numserie,
-            patr_notafiscal: notafiscal,
-            patr_local: local,
-            patr_imei: imei,
-            patr_ativoinativo: ativoinativo,
-            patr_descricao: descricao,
-            patr_responsavel: responsavel,
-            patr_documentacao: documentacao,
-            patr_depreciacao: depreciacao
-        };
 
         updatePatrimony(updateValues, patr_id, user_id)
     } catch (error) {
@@ -105,13 +77,20 @@ router.put('/update/:patr_id', verifyToken, async (req, res) => {
 });
 
 // Rota para deletar um patrimônio
-router.delete('/delete/:patrid', verifyToken, async (req, res) => {
+router.delete('/delete/:prodid', verifyToken, async (req, res) => {
     try {
-        const patr_id = req.params.patrid;
+        const prod_id = req.params.prodid;
         const  user_id  = req.userId;
 
-        // Deletar o patrimônio no banco de dados
-        deletePatrimony(patr_id, user_id, res);
+        
+        const userIsAdmin = await isAdmin(user_id);
+
+        if(!userIsAdmin){
+            return res.status(403).json({message: "Você nao tem permissão para realizar esta ação"})
+        }
+
+
+        deletePatrimony(prod_id, res);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Erro interno do servidor." });

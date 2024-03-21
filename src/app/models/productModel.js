@@ -15,9 +15,9 @@ async function checkNumserieExists(numserie) {
 }
 
 
-const insertproduto = (name, valor, custo, quantidade, descricao, categoria, res) => {
-const insertprodutoQuery = "INSERT INTO tbl_produto(prod_name, prod_valor, prod_custo, prod_quantidade, prod_descricao, cat_id) VALUES (?, ?, ?, ?, ?, ?)";
-        mysqConnection.query(insertprodutoQuery, [name, valor, custo, quantidade, descricao, categoria], (err, results) => {
+const insertproduto = (name,  valorcpf, valorcnpj,custo, quantidade, descricao, categoria, res) => {
+const insertprodutoQuery = "INSERT INTO tbl_produto(prod_name, prod_valorCPF, prod_valorCNPJ, prod_custo, prod_quantidade, prod_descricao, cat_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        mysqConnection.query(insertprodutoQuery, [name,  valorcpf, valorcnpj, custo, quantidade, descricao, categoria], (err, results) => {
             if (err) {
                 console.error(err);
                 return res.status(400).json({ message: "Erro ao tentar realizar o cadastro no banco de dados. Revise as informações." });
@@ -29,35 +29,37 @@ const insertprodutoQuery = "INSERT INTO tbl_produto(prod_name, prod_valor, prod_
 });
 }
 
-const updateprodimony = (updateValues, prod_id, user_id) => {
-const updatequery = "UPDATE tbl_prodimonio SET ? WHERE prod_id = ? and user_id = ?";
-        mysqConnection.query(updatequery, [updateValues, prod_id, user_id], (err, results) => {
+
+async function updateProduto(produto_id, name, valorCPF, valorCNPJ, custo, quantidade, descricao, categoria, res) {
+    return new Promise((resolve, reject) => {
+        const updateProdutoQuery = 'UPDATE tbl_produto SET prod_name = ?, prod_valorCPF = ?, prod_valorCNPJ = ?, prod_custo = ?, prod_quantidade = ?, prod_descricao = ?, cat_id = ? WHERE prod_id = ?';
+        mysqConnection.query(updateProdutoQuery, [name, valorCPF, valorCNPJ, custo, quantidade, descricao, categoria, produto_id], (err, result) => {
             if (err) {
-                console.error('Error updating data:', err);
-                return res.status(500).json({ message: "Error updating data: " + err.message });
+                console.error(err);
+                reject("Erro ao atualizar o produto no banco de dados.");
+                return;
             }
-            if (results.affectedRows > 0) {
-                res.status(200).json({ message: "prodimônio atualizado com sucesso." });
-            } else {
-                res.status(404).json({ message: "prodimônio não encontrado." });
-            }
+            resolve(result);
         });
-    }
+    });
+}
 
 
-const deleteprodimony = (prod_id, user_id, res) => {
+const deleteproduto = (prod_id,  res) => {
 
-    const deleteprodimonyQuery = "DELETE FROM tbl_prodimonio WHERE prod_id = ? AND user_id = ?";
-        mysqConnection.query(deleteprodimonyQuery, [prod_id, user_id], (err, results) => {
+    const deleteprodutoQuery = "DELETE FROM tbl_prodimonio WHERE prod_id = ?";
+        mysqConnection.query(deleteprodutoQuery, [prod_id, user_id], (err, results) => {
             if (err) {
                 console.error(err);
                 return res.status(400).json({ message: "Erro ao tentar realizar a exclusão no banco de dados." });
             }
             if (results.affectedRows > 0) {
-                res.status(200).json({ message: "prodimônio excluído com sucesso." });
+                res.status(200).json({ message: "produto excluído com sucesso." });
             } else {
-                res.status(404).json({ message: "prodimônio não encontrado." });
+                res.status(404).json({ message: "produto não encontrado." });
             }
         });
     }
-module.exports = { insertproduto,checkNumserieExists, updateprodimony, deleteprodimony };
+
+
+module.exports = { insertproduto,checkNumserieExists, updateProduto, deleteproduto };
