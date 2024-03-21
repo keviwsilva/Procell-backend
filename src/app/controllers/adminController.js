@@ -49,6 +49,8 @@ router.get('/listpedidos', verifyToken, async (req, res) => {
           p.ped_id, 
           p.user_id,
           u.user_name,
+          u.user_email,
+          p.ped_pago,
           GROUP_CONCAT(CONCAT(
             pp.prod_id, 
             ':', 
@@ -78,6 +80,8 @@ router.get('/listpedidos', verifyToken, async (req, res) => {
             pedido_id: row.ped_id,
             user_id: row.user_id,
             user_name: row.user_name,
+            user_email: row.user_email,
+            pedido_pago: row.ped_pago,
             produtos: row.produtos.split(',').map(p => {
               const [produto_id, quantidade, nome, valor, descricao] = p.split(':');
               return { produto_id: produto_id, quantidade: quantidade, nome: nome, valor: valor, descricao: descricao };
