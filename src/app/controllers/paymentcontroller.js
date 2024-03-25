@@ -8,6 +8,7 @@ const client = new MercadoPagoConfig({
     "TEST-4977082790428610-071016-26254974bcaccf8055eb3cfa372355ab-259503750",
   
 }); 
+const mysqConnection = require("../../database/index");
 
 
 const preferences = new Preference(client);
@@ -24,18 +25,21 @@ async function createPayment(items) {
       const paymentRequest = await preferences.create({
           body: {
               items: itemList,
-              notification_url: `https://09f4-2804-14d-4283-41af-a4db-dc90-c5b3-cfe6.ngrok-free.app/payment/notificacao?source_news=webhooks`,
+              notification_url: `https://8091-2804-14d-4283-41af-ddb-680c-a74c-b007.ngrok-free.app/payment/notificacao?source_news=webhooks`,
               back_urls: {
-                  success: "https://09f4-2804-14d-4283-41af-a4db-dc90-c5b3-cfe6.ngrok-free.app/payment/success",
-                  failure: "https://09f4-2804-14d-4283-41af-a4db-dc90-c5b3-cfe6.ngrok-free.app",
-                  pending: "https://09f4-2804-14d-4283-41af-a4db-dc90-c5b3-cfe6.ngrok-free.app"
+                  success: "https://8091-2804-14d-4283-41af-ddb-680c-a74c-b007.ngrok-free.app/payment/success",
+                  failure: "https://8091-2804-14d-4283-41af-ddb-680c-a74c-b007.ngrok-free.app",
+                  pending: "https://8091-2804-14d-4283-41af-ddb-680c-a74c-b007.ngrok-free.app"
               },
               auto_return: "approved",
           }
       });
 
       console.log(paymentRequest.notification_url);
-      return paymentRequest.sandbox_init_point;
+      return {
+        sandbox_init_point: paymentRequest.sandbox_init_point,
+        paymentId: paymentRequest// Assuming the API response includes an ID property
+      };
   } catch (error) {
       console.log('error', error);
   }
@@ -47,9 +51,11 @@ router.post("/pagamento", verifyToken, async (req, res) => {
   try {
     const items = req.body.items;
     console.log(items)
+    const pedido_id = req.body.pedido_id;
+    console.log(pedido_id)
     const paymentlink = await createPayment(items)
     console.log(paymentlink);
-    res.status(200).json({ paymentlink: paymentlink});
+    res.status(200).json({ paymentlink: paymentlink.sandbox_init_point , id: paymentlink.paymentId});
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Erro ao processar o pagamento." });
@@ -62,7 +68,7 @@ router.post("/pagamento", verifyToken, async (req, res) => {
 router.post("/notificacao", async (req, res) => {
   const notification = req.body;
   console.log("Notification data:", notification); // Log the complete notification
-
+  const user_id = notification.user_id
   // Extract payment ID from request body
   const paymentId = notification.data.id;
   console.log("Extracted payment ID:", paymentId); // Log the extracted ID
@@ -84,13 +90,14 @@ router.post("/notificacao", async (req, res) => {
 
     // Handle successful API response (payment details)
     const paymentData = response.data;
-    console.log(paymentData.results.status)
+    console.log(paymentData.status)
+    console.log(paymentData.id)
 
-    const paid = paymentData.results.status;
+    const paid = paymentData.status;
 
-    const getPedidosQuery = `UPDATE tbl_pedido SET ped_pago= ? WHERE ped_id = ? AND user_id = ?';`;
+    const getPedidosQuery = `UPDATE tbl_pedido SET ped_pago= ? WHERE pag_id= ?`;
 
-  mysqConnection.query(getPedidosQuery, [paid], (err, results) => {
+  mysqConnection.query(getPedidosQuery, [paid , user_id], (err, results) => {
     if (err) {
       console.error(err);
       return res.status(400).json({ message: "Erro ao buscar os pedidos no banco de dados." });
@@ -105,7 +112,7 @@ router.post("/notificacao", async (req, res) => {
         })
       }));
 
-      res.status(200).json({ pedidos });
+      res.status(200).json({ message: "Pedido atualizado com sucesso!" });
     } else {
       res.status(404).json({ message: "Nenhum pedido encontrado para o usuário especificado." });
     }
@@ -115,7 +122,7 @@ router.post("/notificacao", async (req, res) => {
 
     // ... (rest of your code to process payment details)
 
-    res.status(200).json(paymentData);
+    res.status(200).json({paymentData});
   } catch (error) {
     console.error("Error fetching payment details:", error);
     console.error("API request URL:", mercadoPagoUrl); // Log the constructed URL

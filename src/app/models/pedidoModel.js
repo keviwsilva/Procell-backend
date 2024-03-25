@@ -236,7 +236,7 @@ async function insertPedido(valorTotal, data, userId) {
 async function insertLink(ped_id, user_id, paymentLink, res){
     return new Promise((resolve, reject) => {
 
-        const updateLinkQuery = 'UPDATE tbl_pedido SET link_pagamento = ? WHERE ped_id = ? AND user_id = ?';
+        const updateLinkQuery = 'UPDATE tbl_pedido SET link_pagamento = ?  WHERE ped_id = ? AND user_id = ?';
         mysqConnection.query(updateLinkQuery, [paymentLink, ped_id, user_id], (err, result) => {
             if (err) {
                 console.error(err);

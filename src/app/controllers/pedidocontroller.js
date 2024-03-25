@@ -56,9 +56,7 @@ router.post('/pedidos', verifyToken, async (req, res) => {
       const { items, totalAmount } = formatCartDataForPayment(cartData);
       
       // Construa o objeto paymentBody usando os dados formatados
-      const paymentBody = {
-        items: items,
-      };
+      
       
       const dataAtual = new Date().toISOString().split('T')[0]; 
 
@@ -68,6 +66,10 @@ router.post('/pedidos', verifyToken, async (req, res) => {
 
       await deletarLinhasPorUserId(user_id, res);
 
+      const paymentBody = {
+        items: items,
+        pedido_id: pedidoId
+      };
       
       console.log(paymentBody)
       const response = await axios.post('http://localhost:3001/payment/pagamento', paymentBody, {
@@ -75,12 +77,17 @@ router.post('/pedidos', verifyToken, async (req, res) => {
           Authorization: token // Inclua o token no cabeçalho da solicitação
         }
       });
-
+      const responsedata = response.data;
       console.log(pedidoId, user_id, response.data.paymentlink)
 
-      await insertLink(pedidoId, user_id, response.data.paymentlink)
 
-      res.status(200).json('pedido feito com sucesso')
+      // const coreUserId =  responsedata.id.split('-')[0];
+      // console.log(coreUserId)
+
+
+      await insertLink(pedidoId, user_id, response.data.paymentlink, res)
+      
+      res.status(200).json({responsedata})
 
   } catch (error) {
       console.error(error);
@@ -214,7 +221,5 @@ router.get('/list/:pedido_id', verifyToken, async (req, res) => {
   }
 });
 
-  
 
-
-  module.exports = router;
+module.exports = router;
