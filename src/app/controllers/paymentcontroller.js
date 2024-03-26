@@ -13,7 +13,7 @@ const mysqConnection = require("../../database/index");
 
 const preferences = new Preference(client);
 
-async function createPayment(items) {
+async function createPayment(items, pedido_id) {
   try {
       const itemList = items.map(item => ({
           id: item.id,
@@ -25,20 +25,22 @@ async function createPayment(items) {
       const paymentRequest = await preferences.create({
           body: {
               items: itemList,
-              notification_url: `https://8091-2804-14d-4283-41af-ddb-680c-a74c-b007.ngrok-free.app/payment/notificacao?source_news=webhooks`,
+              notification_url: `https://3b8c-2804-14d-4283-41af-8876-96c3-8966-147d.ngrok-free.app/payment/notificacao?source_news=webhooks`,
               back_urls: {
-                  success: "https://8091-2804-14d-4283-41af-ddb-680c-a74c-b007.ngrok-free.app/payment/success",
-                  failure: "https://8091-2804-14d-4283-41af-ddb-680c-a74c-b007.ngrok-free.app",
-                  pending: "https://8091-2804-14d-4283-41af-ddb-680c-a74c-b007.ngrok-free.app"
+                  success: "https://3b8c-2804-14d-4283-41af-8876-96c3-8966-147d.ngrok-free.app/payment/success",
+                  failure: "https://3b8c-2804-14d-4283-41af-8876-96c3-8966-147d.ngrok-free.app",
+                  pending: "https://3b8c-2804-14d-4283-41af-8876-96c3-8966-147d.ngrok-free.app"
               },
               auto_return: "approved",
+              external_reference: pedido_id 
           }
       });
 
       console.log(paymentRequest.notification_url);
       return {
         sandbox_init_point: paymentRequest.sandbox_init_point,
-        paymentId: paymentRequest// Assuming the API response includes an ID property
+        paymentId: paymentRequest.collector_id,
+        paymentdate: paymentRequest.date_created
       };
   } catch (error) {
       console.log('error', error);
@@ -53,9 +55,9 @@ router.post("/pagamento", verifyToken, async (req, res) => {
     console.log(items)
     const pedido_id = req.body.pedido_id;
     console.log(pedido_id)
-    const paymentlink = await createPayment(items)
+    const paymentlink = await createPayment(items, pedido_id)
     console.log(paymentlink);
-    res.status(200).json({ paymentlink: paymentlink.sandbox_init_point , id: paymentlink.paymentId});
+    res.status(200).json({ paymentlink: paymentlink.sandbox_init_point , id: paymentlink.paymentId, date_created: paymentlink.paymentdate});
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Erro ao processar o pagamento." });
@@ -91,38 +93,36 @@ router.post("/notificacao", async (req, res) => {
     // Handle successful API response (payment details)
     const paymentData = response.data;
     console.log(paymentData.status)
-    console.log(paymentData.id)
+    
+  console.log('--------------------------')
+  console.log(paymentData.external_reference)
+  console.log('--------------------------')
+    console.log(paymentData)
 
     const paid = paymentData.status;
+    const ped_id = paymentData.external_reference;
 
-    const getPedidosQuery = `UPDATE tbl_pedido SET ped_pago= ? WHERE pag_id= ?`;
+    const updatePedidosQuery = `UPDATE tbl_pedido SET ped_pago = ? WHERE ped_id = ?`;
 
-  mysqConnection.query(getPedidosQuery, [paid , user_id], (err, results) => {
-    if (err) {
-      console.error(err);
-      return res.status(400).json({ message: "Erro ao buscar os pedidos no banco de dados." });
-    }
-
-    if (results.length > 0) {
-      const pedidos = results.map(row => ({
-        pedido_id: row.ped_id,
-        produtos: row.produtos.split(',').map(p => {
-          const [produto_id, quantidade, nome, valor, descricao] = p.split(':');
-          return { produto_id: produto_id, quantidade: quantidade, nome: nome, valor: valor, descricao: descricao };
-        })
-      }));
-
-      res.status(200).json({ message: "Pedido atualizado com sucesso!" });
-    } else {
-      res.status(404).json({ message: "Nenhum pedido encontrado para o usuário especificado." });
-    }
-  });
+    mysqConnection.query(updatePedidosQuery, [paid, ped_id], (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.status(400).json({ message: "Erro ao atualizar o pedido no banco de dados." });
+      }
+    
+      if (results.affectedRows > 0) {
+        res.status(200).json({ message: "Pedido atualizado com sucesso!" });
+      } else {
+        res.status(404).json({ message: "Nenhum pedido encontrado para o usuário especificado." });
+      }
+    });
+    
 
 
 
     // ... (rest of your code to process payment details)
 
-    res.status(200).json({paymentData});
+    // res.status(200).json({paymentData});
   } catch (error) {
     console.error("Error fetching payment details:", error);
     console.error("API request URL:", mercadoPagoUrl); // Log the constructed URL

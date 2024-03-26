@@ -64,7 +64,6 @@ router.post('/pedidos', verifyToken, async (req, res) => {
 
       console.log(pedidoId)
 
-      await deletarLinhasPorUserId(user_id, res);
 
       const paymentBody = {
         items: items,
@@ -79,14 +78,20 @@ router.post('/pedidos', verifyToken, async (req, res) => {
       });
       const responsedata = response.data;
       console.log(pedidoId, user_id, response.data.paymentlink)
-
+      
+      console.log(responsedata.paymentlink)
+      console.log(responsedata.id)
+      console.log(responsedata.date_created)
 
       // const coreUserId =  responsedata.id.split('-')[0];
       // console.log(coreUserId)
 
 
-      await insertLink(pedidoId, user_id, response.data.paymentlink, res)
+      await insertLink(pedidoId, user_id, response.data.paymentlink, responsedata.id, responsedata.date_created, res)
       
+
+      await deletarLinhasPorUserId(user_id, res);
+
       res.status(200).json({responsedata})
 
   } catch (error) {

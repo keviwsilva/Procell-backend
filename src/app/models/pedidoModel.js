@@ -233,11 +233,11 @@ async function insertPedido(valorTotal, data, userId) {
     return pedidoId;
   }
 
-async function insertLink(ped_id, user_id, paymentLink, res){
+async function insertLink(ped_id, user_id, paymentLink, paymentid, paymentdate, res){
     return new Promise((resolve, reject) => {
 
-        const updateLinkQuery = 'UPDATE tbl_pedido SET link_pagamento = ?  WHERE ped_id = ? AND user_id = ?';
-        mysqConnection.query(updateLinkQuery, [paymentLink, ped_id, user_id], (err, result) => {
+        const updateLinkQuery = 'UPDATE tbl_pedido SET link_pagamento = ?, ped_data = ? , pag_id = ?  WHERE ped_id = ? AND user_id = ?';
+        mysqConnection.query(updateLinkQuery, [paymentLink, paymentdate, paymentid, ped_id, user_id], (err, result) => {
             if (err) {
                 console.error(err);
                 reject("Erro ao atualizar o link de pagamento no banco de dados.");
