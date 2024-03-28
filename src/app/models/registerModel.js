@@ -8,7 +8,6 @@ const insertUser = (name, email, hashedPassword, telefone, sexo, endereco, tipoD
     mysqConnection.query(insertUserQuery, [name, email, hashedPassword, telefone, sexo, endereco, tipoDocumento, documento], (err, results) => {
         if (err) {
             console.error(err);
-            console.log(2)
             return response.status(400).json({ message: "Erro ao tentar realizar cadastro no banco de dados. Revise as informações." });
         }
 

@@ -118,6 +118,7 @@ router.get('/listpedidos', verifyToken, async (req, res) => {
         SELECT 
           p.ped_id, 
           p.user_id,
+          p.ped_pago,
           GROUP_CONCAT(CONCAT(
             pp.prod_id, 
             ':', 
@@ -146,6 +147,7 @@ router.get('/listpedidos', verifyToken, async (req, res) => {
           const pedidos = results.map(row => ({
             pedido_id: row.ped_id,
             user_id: row.user_id,
+            ped_pago: row.ped_pago,
             produtos: row.produtos.split(',').map(p => {
               const [produto_id, quantidade, nome, valor, descricao] = p.split(':');
               return { produto_id: produto_id, quantidade: quantidade, nome: nome, valor: valor, descricao: descricao };

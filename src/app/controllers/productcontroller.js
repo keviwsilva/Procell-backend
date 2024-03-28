@@ -30,20 +30,44 @@ router.post('/register',verifyToken, async (req, res) => {
     }
 });
 
-router.get('/list', verifyToken, async (req, res) => {
+router.get('/list', async (req, res) => {
     try {
-        
-        const user_type = req.userType;
+        const bearerHeader = req.headers['authorization'];
+        let user_type = '1';
+        console.log(user_type)
+        // Verificar se o cabeçalho de autorização está presente
+        if (typeof bearerHeader !== 'undefined') {
+            // Extrair o token do cabeçalho
+            // Verificar o token
+            console.log(bearerHeader)
+            jwt.verify(bearerHeader, '2^=+uqW)?E7wVD^&U45qRgDj8aS@ZgB!', (err, authData) => {
+                if (err) {
+                    console.error(err);
+                    // Token inválido
+                    // Definir userType como CPF ou qualquer outra lógica desejada quando o token for inválido
+                    req.usertype = 'CPF'; 
+                } else {
+                    // Token válido
+                    console.log(authData);
+                    user_type = authData.usertype;
+                    console.log(user_type);
+                }
+            });
+        } else {
+            // Token não está presente
+            // Definir userType como CPF ou qualquer outra lógica desejada quando o token não for fornecido
+            req.usertype = 'CPF';
+        }
 
-
+        // const user_type = req.userType;
+        console.log(user_type)
         // Construa a consulta SQL com base no tipo de usuário
         let getproductsQuery = "";
         if (user_type === 'CPF' || user_type === '') {
             getproductsQuery = "SELECT p.prod_name, p.prod_valorCPF AS valor, p.prod_quantidade, p.prod_descricao, c.cat_name, c.cat_descricao FROM tbl_produto p JOIN tbl_categoria c ON p.cat_id = c.cat_id";
-        } else if (user_type === 'pessoa_juridica') {
+        } else if (user_type === 'CNPJ') {
             getproductsQuery = "SELECT p.prod_name, p.prod_valorCNPJ AS valor, p.prod_quantidade, p.prod_descricao, c.cat_name, c.cat_descricao FROM tbl_produto p JOIN tbl_categoria c ON p.cat_id = c.cat_id";
         }
-
         // Consultar o banco de dados para obter os produtos do usuário
         mysqConnection.query(getproductsQuery, (err, products_results) => {
             if (err) {

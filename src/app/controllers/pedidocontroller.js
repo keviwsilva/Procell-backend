@@ -28,7 +28,7 @@ router.get('/carrinholist', verifyToken, async (req, res) => {
       const user_id = req.userId;
       const user_type = req.userType
       const cartData = await getCartData(user_id, user_type); 
-      console.log(cartData)
+      // console.log(cartData)
       res.status(200).json(cartData)
   } catch (error) {
       console.error(error);
@@ -52,7 +52,7 @@ router.post('/pedidos', verifyToken, async (req, res) => {
         return res.status(400).json({ message: "O carrinho está vazio. Não é possível fazer o pedido." });
       }
 
-      console.log(cartData)
+      // console.log(cartData)
       const { items, totalAmount } = formatCartDataForPayment(cartData);
       
       // Construa o objeto paymentBody usando os dados formatados
@@ -77,11 +77,11 @@ router.post('/pedidos', verifyToken, async (req, res) => {
         }
       });
       const responsedata = response.data;
-      console.log(pedidoId, user_id, response.data.paymentlink)
+      // console.log(pedidoId, user_id, response.data.paymentlink)
       
-      console.log(responsedata.paymentlink)
-      console.log(responsedata.id)
-      console.log(responsedata.date_created)
+      // console.log(responsedata.paymentlink)
+      // console.log(responsedata.id)
+      // console.log(responsedata.date_created)
 
       // const coreUserId =  responsedata.id.split('-')[0];
       // console.log(coreUserId)

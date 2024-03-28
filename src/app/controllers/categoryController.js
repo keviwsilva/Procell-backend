@@ -3,6 +3,7 @@ const mysqConnection = require("../../database");
 // const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 
+const { isAdmin } = require("../models/adminModel");
 const { verifyToken } = require("../middleware/jwtmiddleware")
 const { insertcategory,checkNumserieExists, updatePatrimony, deletePatrimony } = require("../models/categoryModel");
 
@@ -12,7 +13,7 @@ const router = express.Router();
 router.post('/register',verifyToken, async (req, res) => {
     try {
         const { name, descricao } = req.body;
-        
+        const user_id = req.userId;
         const userIsAdmin = await isAdmin(user_id);
 
         if(!userIsAdmin){

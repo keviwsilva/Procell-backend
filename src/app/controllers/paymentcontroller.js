@@ -36,7 +36,7 @@ async function createPayment(items, pedido_id) {
           }
       });
 
-      console.log(paymentRequest.notification_url);
+      // console.log(paymentRequest.notification_url);
       return {
         sandbox_init_point: paymentRequest.sandbox_init_point,
         paymentId: paymentRequest.collector_id,
@@ -52,11 +52,11 @@ async function createPayment(items, pedido_id) {
 router.post("/pagamento", verifyToken, async (req, res) => {
   try {
     const items = req.body.items;
-    console.log(items)
+    // console.log(items)
     const pedido_id = req.body.pedido_id;
-    console.log(pedido_id)
+    // console.log(pedido_id)
     const paymentlink = await createPayment(items, pedido_id)
-    console.log(paymentlink);
+    // console.log(paymentlink);
     res.status(200).json({ paymentlink: paymentlink.sandbox_init_point , id: paymentlink.paymentId, date_created: paymentlink.paymentdate});
   } catch (error) {
     console.error(error);
@@ -69,11 +69,11 @@ router.post("/pagamento", verifyToken, async (req, res) => {
 
 router.post("/notificacao", async (req, res) => {
   const notification = req.body;
-  console.log("Notification data:", notification); // Log the complete notification
+  // console.log("Notification data:", notification); // Log the complete notification
   const user_id = notification.user_id
   // Extract payment ID from request body
   const paymentId = notification.data.id;
-  console.log("Extracted payment ID:", paymentId); // Log the extracted ID
+  // console.log("Extracted payment ID:", paymentId); // Log the extracted ID
   
   // Construct the Mercado Pago API URL
   const mercadoPagoUrl = `https://api.mercadopago.com/v1/payments/${paymentId}`;
@@ -82,7 +82,7 @@ router.post("/notificacao", async (req, res) => {
     // Make a GET request to the Mercado Pago API using 'axios'
     
     const accessToken =  "Bearer TEST-4977082790428610-071016-26254974bcaccf8055eb3cfa372355ab-259503750";
-    console.log(accessToken)
+    // console.log(accessToken)
     const axios = require('axios');
     const headers = {
         Authorization: accessToken,
@@ -92,12 +92,12 @@ router.post("/notificacao", async (req, res) => {
 
     // Handle successful API response (payment details)
     const paymentData = response.data;
-    console.log(paymentData.status)
+    // console.log(paymentData.status)
     
-  console.log('--------------------------')
-  console.log(paymentData.external_reference)
-  console.log('--------------------------')
-    console.log(paymentData)
+  // console.log('--------------------------')
+  // console.log(paymentData.external_reference)
+  // console.log('--------------------------')
+    // console.log(paymentData)
 
     const paid = paymentData.status;
     const ped_id = paymentData.external_reference;

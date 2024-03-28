@@ -53,7 +53,7 @@ router.post('/login', loginLimiter, async (req, res) => {
 
                         if (passwordMatch) {
                             // Generate a JWT token
-                            console.log(clientIp);
+                            // console.log(clientIp);
                             updateUserLastLoginIp(clientIp, userId, function (updateError, updateResults, updateFields) {
                                 if (updateError) {
                                     console.error(updateError);
@@ -61,16 +61,16 @@ router.post('/login', loginLimiter, async (req, res) => {
                             });
 
 
-                            const fileName = `user_${userId}_login_logs.txt`;
-                            const filePath = path.join(__dirname, '../../logs', fileName); // Adjust the folder as needed
+                            // const fileName = `user_${userId}_login_logs.txt`;
+                            // const filePath = path.join(__dirname, '../../logs', fileName); // Adjust the folder as needed
 
-                            // Append log entry to the user-specific file
-                            const logEntry = `${moment().tz('America/Sao_Paulo').format('YYYY-MM-DDTHH:mm:ss.SSSZ')} - User ${userId} logged in from IP ${clientIp}\n`;
-                            fs.appendFile(filePath, logEntry, (appendError) => {
-                                if (appendError) {
-                                    console.error(appendError);
-                                }
-                            });
+                            // // Append log entry to the user-specific file
+                            // const logEntry = `${moment().tz('America/Sao_Paulo').format('YYYY-MM-DDTHH:mm:ss.SSSZ')} - User ${userId} logged in from IP ${clientIp}\n`;
+                            // fs.appendFile(filePath, logEntry, (appendError) => {
+                            //     if (appendError) {
+                            //         console.error(appendError);
+                            //     }
+                            // });
 
 
                             const token = jwt.sign({ email: email, userId: userId, usertype: userType }, jwtSecret, { expiresIn: '1h' }); // Adjust expiration as needed
