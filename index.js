@@ -21,6 +21,7 @@ const categoryRoutes = require("./src/app/controllers/categoryController");
 const pedidoRoutes = require("./src/app/controllers/pedidocontroller");
 const paymentRoutes = require("./src/app/controllers/paymentcontroller");
 const adminRoutes = require("./src/app/controllers/adminController");
+const endRoutes = require("./src/app/controllers/enderecoController")
 
 
 app.use('/auth', authRoutes);
@@ -30,6 +31,7 @@ app.use('/category', categoryRoutes);
 app.use('/pedido', pedidoRoutes);
 app.use('/payment', paymentRoutes);
 app.use('/admin', adminRoutes);
+app.use('/endereco', endRoutes);
 
 
 // Your other routes...

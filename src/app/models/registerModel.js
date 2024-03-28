@@ -2,18 +2,30 @@ const mysqConnection = require("../../database/index");
 const { cpf: cpfValidator, cnpj: cnpjValidator } = require('cpf-cnpj-validator');
 
 
-const insertUser = (name, email, hashedPassword, telefone, sexo, endereco, tipoDocumento, documento, response) => {
-    const insertUserQuery = "INSERT INTO tbl_user(user_name, user_email, user_password, user_telefone, user_sexo, user_end, user_type, user_cpfcnpj) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-    console.log(1)
-    mysqConnection.query(insertUserQuery, [name, email, hashedPassword, telefone, sexo, endereco, tipoDocumento, documento], (err, results) => {
+const insertUser = (name, email, hashedPassword, telefone, sexo, enderecocep, endereconumber,  tipoDocumento, documento, response) => {
+    const insertUserQuery = "INSERT INTO tbl_user(user_name, user_email, user_password, user_telefone, user_sexo, user_type, user_cpfcnpj) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    
+    mysqConnection.query(insertUserQuery, [name, email, hashedPassword, telefone, sexo, tipoDocumento, documento], (err, results) => {
         if (err) {
             console.error(err);
             return response.status(400).json({ message: "Erro ao tentar realizar cadastro no banco de dados. Revise as informações." });
         }
 
         if (results.affectedRows > 0) {
-            console.log(3)
-            response.status(200).json({ message: "Cadastro realizado com sucesso. Faça login para acessar a plataforma!" });
+            console.log(results)
+            const insertEndQuery  = "INSERT INTO tbl_endereco(end_cep, end_numero, user_id) VALUES (?,?,?)";
+            mysqConnection.query(insertEndQuery, [enderecocep, endereconumber, results.insertId], (err, results) =>{
+                if(err){
+                    console.log(err);
+                    response.status(400).json({ message: "Erro ao tentar realizar cadastro no banco de dados. Revise as informações." });
+                }
+                if(results.affectedRows > 0){
+                    response.status(200).json({ message: "Cadastro realizado com sucesso. Faça login para acessar a plataforma!" });
+                }else {
+                    response.status(400).json({ message: "Erro ao tentar realizar cadastro no banco de dados. Revise as informações." });
+                }
+            })
+            
         } else {
             response.status(400).json({ message: "Erro ao tentar realizar cadastro no banco de dados. Revise as informações." });
         }

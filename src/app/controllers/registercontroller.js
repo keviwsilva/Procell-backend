@@ -9,7 +9,7 @@ const { insertUser, checkIfEmailExists, detectarTipoDocumento, validarCNPJ,  val
 //-----------------cadastro-----------------//
 router.post('/user', async (req, res) => {
     try {
-        const { name, telefone, email, endereco, sexo, password, documento } = req.body;
+        const { name, telefone, email, enderecocep, endereconumber, sexo, password, documento } = req.body;
 
         // Check if the email already exists
         const emailExists = await checkIfEmailExists(email,documento);
@@ -26,13 +26,13 @@ router.post('/user', async (req, res) => {
             const hashedPassword = await bcrypt.hash(password, 10);
             // console.log(123)
             // Insira o usuário no banco de dados
-            insertUser(name, email, hashedPassword, telefone, sexo, endereco, tipoDocumento, documento, res);
+            insertUser(name, email, hashedPassword, telefone, sexo, enderecocep, endereconumber, tipoDocumento, documento, res);
         } else if (tipoDocumento === 'CNPJ' && validarCNPJ(documento)) {
             // Hash the password using bcrypt
             const hashedPassword = await bcrypt.hash(password, 10);
 
             // Insira o usuário no banco de dados
-            insertUser(name, email, hashedPassword, telefone, sexo, endereco, tipoDocumento, documento, res);
+            insertUser(name, email, hashedPassword, telefone, sexo, enderecocep, endereconumber, tipoDocumento, documento, res);
         } else {
             return res.status(400).json({ message: "Documento inválido. Deve ser CPF ou CNPJ." });
         }

@@ -54,7 +54,7 @@ router.get('/list', verifyToken, async (req, res) => {
 
 
 // Rota para atualizar um patrimônio
-router.put('/update/:patr_id', verifyToken, async (req, res) => {
+router.put('/update/:prod_id', verifyToken, async (req, res) => {
     try {
         const prod_id = req.params.prod_id;
         const user_id  = req.userId;
