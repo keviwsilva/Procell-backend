@@ -105,6 +105,43 @@ router.get('/list', async (req, res) => {
     }
 });
 
+router.get('/product/:produto_id', async (req, res) => {
+    try {
+        const produto_id = req.params.produto_id;
+
+        // Consultar informações do produto
+        const getProductQuery = "SELECT * FROM tbl_produto WHERE prod_id = ?";
+        mysqConnection.query(getProductQuery, [produto_id], async (err, productResults) => {
+            if (err) {
+                console.error(err);
+                return res.status(400).json({ message: "Erro ao buscar informações do produto." });
+            }
+
+            if (productResults.length === 0) {
+                return res.status(404).json({ message: "Produto não encontrado." });
+            }
+
+            const productInfo = productResults[0];
+
+            // Consultar imagens do produto
+            const getImagesQuery = "SELECT imagem_base64 FROM tbl_imagem_produto WHERE produto_id = ?";
+            mysqConnection.query(getImagesQuery, [produto_id], (err, imageResults) => {
+                if (err) {
+                    console.error(err);
+                    return res.status(400).json({ message: "Erro ao buscar imagens do produto." });
+                }
+
+                const images = imageResults.map(result => result.imagem_base64);
+
+                // Retornar informações do produto e imagens
+                res.status(200).json({ produto: productInfo, imagens: images });
+            });
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erro interno do servidor." });
+    }
+});
 
 
 
