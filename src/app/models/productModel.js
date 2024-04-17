@@ -48,9 +48,17 @@ function levenshteinDistance(a, b) {
 }
 
 // Função para verificar a similaridade entre dois nomes de produtos
+// Função para verificar a similaridade entre dois nomes de produtos
 function isSimilar(name1, name2, threshold) {
     const distance = levenshteinDistance(name1, name2);
-    return distance <= threshold;
+    if (distance === 0) {
+        // Nomes exatamente iguais
+        return true;
+    } else if (distance <= threshold) {
+        // Nomes semelhantes, registrar uma mensagem de log
+        console.log(`Os nomes '${name1}' e '${name2}' são semelhantes.`);
+    }
+    return false;
 }
 
 
@@ -65,7 +73,7 @@ const insertproduto = (name, valorcpf, valorcnpj, custo, quantidade, descricao, 
             return res.status(500).json({ message: "Erro interno do servidor." });
         }
         
-        const threshold = 4;
+        const threshold = 8;
         const similarProducts = checkResults.filter(result => isSimilar(result.prod_name, name, threshold));
 
         if (similarProducts.length > 0) {

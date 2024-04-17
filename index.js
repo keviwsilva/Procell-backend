@@ -9,7 +9,7 @@ const cors = require('cors');
 
 // Middleware
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json({limit: '100mb'}));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({ secret: "your-secret-key", resave: true, saveUninitialized: true }));
 

@@ -15,27 +15,27 @@ const router = express.Router();
 
 // Rota para cadastrar um patrimônio
 router.post('/register', verifyToken, async (req, res) => {
-    try {
-        const user_id = req.userId;
+  try {
+      const user_id = req.userId;
 
-        const userIsAdmin = await isAdmin(user_id);
+      const userIsAdmin = await isAdmin(user_id);
 
-        if (!userIsAdmin) {
-            return res.status(403).json({ message: "Você não tem permissão para realizar esta ação" });
-        }
+      if (!userIsAdmin) {
+          return res.status(403).json({ message: "Você não tem permissão para realizar esta ação" });
+      }
 
-        const { name, valorcpf, valorcnpj, custo, quantidade, descricao, categoria, base64Images } = req.body;
+      const { name, valorcpf, valorcnpj, custo, quantidade, descricao, categoria, base64Images } = req.body;
 
-        if (!base64Images || !Array.isArray(base64Images) || base64Images.length === 0) {
-            return res.status(400).send('Nenhuma imagem enviada');
-        }
+      if (!base64Images || !Array.isArray(base64Images) || base64Images.length === 0) {
+          return res.status(400).send('Nenhuma imagem enviada');
+      }
 
-        // Chamar a função de inserção de produto com as imagens em base64
-        await insertproduto(name, valorcpf, valorcnpj, custo, quantidade, descricao, categoria, base64Images, res);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Erro interno do servidor." });
-    }
+      // Chamar a função de inserção de produto com as imagens em base64
+      await insertproduto(name, valorcpf, valorcnpj, custo, quantidade, descricao, categoria, base64Images, res);
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Erro interno do servidor." });
+  }
 });
 
 
@@ -104,44 +104,66 @@ router.get('/list', async (req, res) => {
         res.status(500).json({ message: "Erro interno do servidor." });
     }
 });
-
 router.get('/product/:produto_id', async (req, res) => {
     try {
-        const produto_id = req.params.produto_id;
-
-        // Consultar informações do produto
-        const getProductQuery = "SELECT * FROM tbl_produto WHERE prod_id = ?";
-        mysqConnection.query(getProductQuery, [produto_id], async (err, productResults) => {
-            if (err) {
+      const produto_id = req.params.produto_id;
+  
+      // Consultar informações do produto
+      const getProductQuery = "SELECT * FROM tbl_produto WHERE prod_id = ?";
+      mysqConnection.query(getProductQuery, [produto_id], async (err, productResults) => {
+        if (err) {
+          console.error(err);
+          return res.status(400).json({ message: "Erro ao buscar informações do produto." });
+        }
+  
+        if (productResults.length === 0) {
+          return res.status(404).json({ message: "Produto não encontrado." });
+        }
+  
+        const productInfo = productResults[0];
+  
+        // Consultar imagens do produto
+        const getImagesQuery = "SELECT imagem_base64 FROM tbl_imagem_produto WHERE produto_id = ?";
+        mysqConnection.query(getImagesQuery, [produto_id], (err, imageResults) => {
+          if (err) {
+            console.error(err);
+            return res.status(400).json({ message: "Erro ao buscar imagens do produto." });
+          }
+  
+          const images = imageResults.map(result => result.imagem_base64);
+  
+          // Consultar valor do produto por tipo de usuário
+          const bearerHeader = req.headers['authorization'];
+          let user_type = '1';
+  
+          if (typeof bearerHeader !== 'undefined') {
+            jwt.verify(bearerHeader, '2^=+uqW)?E7wVD^&U45qRgDj8aS@ZgB!', (err, authData) => {
+              if (err) {
                 console.error(err);
-                return res.status(400).json({ message: "Erro ao buscar informações do produto." });
-            }
-
-            if (productResults.length === 0) {
-                return res.status(404).json({ message: "Produto não encontrado." });
-            }
-
-            const productInfo = productResults[0];
-
-            // Consultar imagens do produto
-            const getImagesQuery = "SELECT imagem_base64 FROM tbl_imagem_produto WHERE produto_id = ?";
-            mysqConnection.query(getImagesQuery, [produto_id], (err, imageResults) => {
-                if (err) {
-                    console.error(err);
-                    return res.status(400).json({ message: "Erro ao buscar imagens do produto." });
-                }
-
-                const images = imageResults.map(result => result.imagem_base64);
-
-                // Retornar informações do produto e imagens
-                res.status(200).json({ produto: productInfo, imagens: images });
+                // Token inválido
+                user_type = 'CPF';
+              } else {
+                user_type = authData.usertype;
+              }
             });
+          }
+  
+          const productValue = user_type === 'CPF' ? productInfo.prod_valorCPF : productInfo.prod_valorCNPJ;
+  
+          // Retornar informações do produto, imagens e valor
+          res.status(200).json({
+            produto: productInfo,
+            imagens: images,
+            valor: productValue
+          });
         });
+      });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Erro interno do servidor." });
+      console.error(error);
+      res.status(500).json({ message: "Erro interno do servidor." });
     }
-});
+  });
+  
 
 
 
