@@ -12,9 +12,10 @@ const { compareSync } = require("bcrypt");
 
 const router = express.Router();
 
+const upload = multer({ dest: '../uploads' });
 
 // Rota para cadastrar um patrimônio
-router.post('/register', verifyToken, async (req, res) => {
+router.post('/register', verifyToken, upload.array('images', 5), async (req, res) => {
   try {
       const user_id = req.userId;
 
@@ -26,9 +27,19 @@ router.post('/register', verifyToken, async (req, res) => {
 
       const { name, valorcpf, valorcnpj, custo, quantidade, descricao, categoria, base64Images } = req.body;
 
-      if (!base64Images || !Array.isArray(base64Images) || base64Images.length === 0) {
-          return res.status(400).send('Nenhuma imagem enviada');
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).send('Nenhuma imagem enviada');
       }
+  
+      // Converta cada imagem em base64 e salve no array base64Images
+      req.files.forEach(file => {
+        const data = fs.readFileSync(file.path);
+        const base64Image = Buffer.from(data).toString('base64');
+        base64Images.push(base64Image);
+        
+        // Exclua a imagem da pasta temporária
+        fs.unlinkSync(file.path);
+      });
 
       // Chamar a função de inserção de produto com as imagens em base64
       await insertproduto(name, valorcpf, valorcnpj, custo, quantidade, descricao, categoria, base64Images, res);
