@@ -29,8 +29,8 @@ const insertcategoriaQuery = "INSERT INTO tbl_categoria(cat_name, cat_descricao)
 });
 }
 
-const updateprodimony = (updateValues, prod_id, user_id) => {
-const updatequery = "UPDATE tbl_prodimonio SET ? WHERE prod_id = ? and user_id = ?";
+const updateproduto = (updateValues, prod_id, user_id) => {
+const updatequery = "UPDATE tbl_produto SET ? WHERE prod_id = ? and user_id = ?";
         mysqConnection.query(updatequery, [updateValues, prod_id, user_id], (err, results) => {
             if (err) {
                 console.error('Error updating data:', err);
@@ -45,9 +45,9 @@ const updatequery = "UPDATE tbl_prodimonio SET ? WHERE prod_id = ? and user_id =
     }
 
 
-const deleteprodimony = (prod_id, user_id, res) => {
+const deleteproduto = (prod_id, user_id, res) => {
 
-    const deleteprodimonyQuery = "DELETE FROM tbl_prodimonio WHERE prod_id = ? AND user_id = ?";
+    const deleteprodimonyQuery = "DELETE FROM tbl_produto WHERE prod_id = ? AND user_id = ?";
         mysqConnection.query(deleteprodimonyQuery, [prod_id, user_id], (err, results) => {
             if (err) {
                 console.error(err);
@@ -60,4 +60,4 @@ const deleteprodimony = (prod_id, user_id, res) => {
             }
         });
     }
-module.exports = { insertcategory,checkNumserieExists, updateprodimony, deleteprodimony };
+module.exports = { insertcategory,checkNumserieExists, updateproduto, deleteproduto };

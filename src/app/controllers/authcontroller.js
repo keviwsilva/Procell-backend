@@ -54,12 +54,7 @@ router.post('/login', loginLimiter, async (req, res) => {
                         if (passwordMatch) {
                             // Generate a JWT token
                             // console.log(clientIp);
-                            updateUserLastLoginIp(clientIp, userId, function (updateError, updateResults, updateFields) {
-                                if (updateError) {
-                                    console.error(updateError);
-                                }
-                            });
-
+                           
 
                             // const fileName = `user_${userId}_login_logs.txt`;
                             // const filePath = path.join(__dirname, '../../logs', fileName); // Adjust the folder as needed

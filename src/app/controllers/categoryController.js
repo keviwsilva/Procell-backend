@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 
 const { isAdmin } = require("../models/adminModel");
 const { verifyToken } = require("../middleware/jwtmiddleware")
-const { insertcategory,checkNumserieExists, updatePatrimony, deletePatrimony } = require("../models/categoryModel");
+const { insertcategory,checkNumserieExists, deleteproduto , updateproduto } = require("../models/categoryModel");
 
 const router = express.Router();
 
@@ -70,7 +70,7 @@ router.put('/update/:prod_id', verifyToken, async (req, res) => {
         } = req.body;
 
 
-        updatePatrimony(updateValues, patr_id, user_id)
+        updateproduto(updateValues, patr_id, user_id)
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Internal Server Error: " + error.message });
@@ -91,7 +91,7 @@ router.delete('/delete/:prodid', verifyToken, async (req, res) => {
         }
 
 
-        deletePatrimony(prod_id, res);
+        deleteproduto(prod_id, res);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Erro interno do servidor." });
