@@ -9,6 +9,7 @@ const { verifyToken } = require("../middleware/jwtmiddleware")
 const { insertproduto, checkNumserieExists, updateProdutoWithImages, deleteproduto } = require("../models/productModel");
 const { isAdmin } = require("../models/adminModel");
 const { compareSync } = require("bcrypt");
+const { log } = require("console");
 
 const router = express.Router();
 
@@ -54,7 +55,6 @@ router.get('/list', async (req, res) => {
     try {
         const bearerHeader = req.headers['authorization'];
         let user_type = '1';
-
         // Verificar se o cabeçalho de autorização está presente
         if (typeof bearerHeader !== 'undefined') {
             // Extrair o token do cabeçalho
@@ -83,7 +83,9 @@ router.get('/list', async (req, res) => {
 
         // Construa a consulta SQL com base no tipo de usuário e aplicar a paginação
         let getproductsQuery = `
-            SELECT p.prod_name,
+            SELECT 
+                p.prod_id,
+                p.prod_name,
                 ${user_type === 'CPF' ? 'p.prod_valorCPF' : 'p.prod_valorCNPJ'} AS valor,
                 p.prod_quantidade,
                 p.prod_descricao,
@@ -105,7 +107,9 @@ router.get('/list', async (req, res) => {
             }
 
             if (products_results.length > 0) {
-                res.status(200).json({ produtos: products_results });
+              // console.log(products_results);  
+              res.status(200).json({ produtos: products_results });
+                
             } else {
                 res.status(404).json({ message: "Nenhum produto encontrado para o usuário especificado." });
             }
@@ -115,10 +119,11 @@ router.get('/list', async (req, res) => {
         res.status(500).json({ message: "Erro interno do servidor." });
     }
 });
+
+
 router.get('/product/:produto_id', async (req, res) => {
     try {
       const produto_id = req.params.produto_id;
-  
       // Consultar informações do produto
       const getProductQuery = "SELECT * FROM tbl_produto WHERE prod_id = ?";
       mysqConnection.query(getProductQuery, [produto_id], async (err, productResults) => {
